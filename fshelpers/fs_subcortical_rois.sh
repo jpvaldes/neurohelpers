@@ -14,6 +14,10 @@ REQUIRED ARGS:
 -d: subjects directory (SUBJECTS_DIR)
 -o: output dir
 
+DEPENDENCIES:
+
+The awk file subcortical_masks_script.awk in ${0%/*}
+
 END
 }
 
@@ -40,6 +44,7 @@ SUBJECTS_DIR=""
 OUTPUT_DIR=""
 SUBJ=""
 CORTICAL_DIR=""
+AWK_SCRIPT=${0%/*}/subcortical_masks_script.awk
 
 # Parse args
 while getopts "h?:s:o:d:" opt; do
@@ -63,9 +68,18 @@ if [[ ${SUBJ} = "" || ${SUBJECTS_DIR} = "" || ${OUTPUT_DIR} = "" ]]; then
     exit 1
 fi
 
+if [[ ! -f ${AWK_SCRIPT} ]]; then
+    echo !!! Error: ${AWK_SCRIPT} not found
+    echo !!! Exiting
+    exit 1
+fi
+
 SINK_DIR=${SUBJECTS_DIR}/${SUBJ}/${OUTPUT_DIR}
 mkdir -p ${SINK_DIR}
 
+OUT_SCRIPT=${SINK_DIR}/subcortical_extract_masks.sh
+
+pushd ${SINK_DIR} &> /dev/null
 echo +++ Move segmentation results to original input -- raw -- space
 
 mri_label2vol --seg ${SUBJECTS_DIR}/${SUBJ}/mri/aseg.mgz\
@@ -73,36 +87,23 @@ mri_label2vol --seg ${SUBJECTS_DIR}/${SUBJ}/mri/aseg.mgz\
     --o ${SINK_DIR}/aseg_in_rawavg.nii.gz\
     --regheader ${SUBJECTS_DIR}/${SUBJ}/mri/aseg.mgz
 
-echo +++ Creating amygdala mask
+echo +++ Write out aseg.sum
+# could try to use stats/aseg.stats but will need to filter out regions
+# that are not really in the volume (0 mm^3) and the file format is
+# slightly more complicated; better use the sum file
+mri_segstats --seg ${SUBJECTS_DIR}/${SUBJ}/mri/aseg.mgz \
+    --excludeid 0 --ctab ${FREESURFER_HOME}/FreeSurferColorLUT.txt \
+    --sum ${SINK_DIR}/aseg.sum
 
-# amygdala 18, 54
-# Values at FSTutorial/AnatomicalROI/FreeSurferColorLUT
-fslmaths ${SINK_DIR}/aseg_in_rawavg.nii.gz -thr 18 -uthr 18\
-    ${SINK_DIR}/lh_amygdala.nii.gz
-fslmaths ${SINK_DIR}/aseg_in_rawavg.nii.gz -thr 54 -uthr 54\
-    ${SINK_DIR}/rh_amygdala.nii.gz
+echo +++ Write out script to make the masks
+gawk -f ${AWK_SCRIPT} -v niftifile=${SINK_DIR}/aseg_in_rawavg.nii.gz \
+    ${SINK_DIR}/aseg.sum > ${OUT_SCRIPT}
 
-echo +++ Creating thalamus mask
-
-# thalamus 10, 49
-fslmaths ${SINK_DIR}/aseg_in_rawavg.nii.gz -thr 10 -uthr 10\
-    ${SINK_DIR}/lh_thalamus.nii.gz
-fslmaths ${SINK_DIR}/aseg_in_rawavg.nii.gz -thr 49 -uthr 49\
-    ${SINK_DIR}/rh_thalamus.nii.gz
-
-# example script, for now, to show how to extract subcortical regions
-# for d in $(ls ${1}); do
-#     mri_annotation2label --subject $d --hemi lh --outdir $(pwd)/${d}/label
-#     mri_annotation2label --subject $d --hemi rh --outdir $(pwd)/${d}/label
-#     # generate precuneus masks
-#     mri_label2vol --label ${d}/label/lh.precuneus.label --temp ${d}/mri/rawavg.mgz --o ${d}/label/lh_precuneus.nii.gz --regheader ${d}/mri/aseg.mgz 
-#     mri_label2vol --label ${d}/label/rh.precuneus.label --temp ${d}/mri/rawavg.mgz --o ${d}/label/rh_precuneus.nii.gz --regheader ${d}/mri/aseg.mgz 
-#     # move the results of the segmentation to raw (original input) average space
-#     # before we generate the subcortical volumetric masks
-#     mri_label2vol --seg ${d}/mri/aseg.mgz --temp ${d}/mri/rawavg.mgz --o ${d}/label/aseg_in_rawavg.nii.gz --regheader ${d}/mri/aseg.mgz    
-#     # generate amygdala mask, labels 18 right and 54 left (could be other/s
-#     # structures). Values at FSTutorial/AnatomicalROI/FreeSurferColorLUT
-#     fslmaths ${d}/label/aseg_in_rawavg.nii.gz -thr 18 -uthr 18 -bin ${d}/label/lh_amygdala.nii.gz
-#     fslmaths ${d}/label/aseg_in_rawavg.nii.gz -thr 54 -uthr 54 -bin ${d}/label/rh_amygdala.nii.gz
-# done
-
+echo +++ Running ${OUT_SCRIPT}
+chmod +x ${OUT_SCRIPT}
+${OUT_SCRIPT}
+popd &> /dev/null
+echo +++ Done
+echo +++ Masks should be in ${SINK_DIR}
+echo +++ Bye
+exit 0
