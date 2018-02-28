@@ -80,7 +80,7 @@ while getopts "h?:s:o:d:i:" opt; do
 done
 
 # this script depends on the awk script parsing the sum file output
-AWK_SCRIPT=${0%/*}/write_mask_script.awk
+AWK_SCRIPT=${0%/*}/write_masks_script.awk
 if [[ ! -f ${AWK_SCRIPT} ]]; then
     echo !!! Error: ${AWK_SCRIPT} not found
     echo !!! Exiting
