@@ -27,7 +27,7 @@ DEPENDENCIES:
 END
 }
 
-f_choose_compression() {
+function choose_compression() {
     # try to use pigz if installed, if not gzip
     if command -v pigz >/dev/null; then
         local COMPRESS_COMMAND="pigz -v"
@@ -42,7 +42,7 @@ f_choose_compression() {
     echo "$COMPRESS_COMMAND"
 }
 
-f_choose_decompression() {
+function choose_decompression() {
     if command -v pigz >/dev/null; then
         local DECOMPRESS_COMMAND="pigz -d"
         # check for gzip
@@ -77,8 +77,8 @@ if [[ -z ${NTR_EXE} ]]; then
     exit 1
 fi
 
-ZIP=$(f_choose_compression)
-UNZIP=$(f_choose_decompression)
+ZIP=$(choose_compression)
+UNZIP=$(choose_decompression)
 
 for f in $(find . -mindepth 1 -maxdepth 1 -type f -name "*.nii*"); do
     filename=${f##*/}
