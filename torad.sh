@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# AUTHOR: José P Valdés-Herrera
+
 # Look for nii.gz files, unzip them, use nii_to_radio
 # to change the orientation, zip them again, pray it went fine.
 

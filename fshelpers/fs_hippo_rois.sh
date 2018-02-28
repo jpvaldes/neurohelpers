@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# AUTHOR: José P Valdés-Herrera
+
 # description and help
 function show_help() {
     cat > /dev/stdout << END
