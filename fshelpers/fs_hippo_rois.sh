@@ -9,7 +9,9 @@ USAGE: ${0##*/} [-h] -s id -d subjects/dir -o output -i analysis_id
 
 DESCRIPTION:
 ${0##*/} transforms hippocampal and amygdala Freesurfer segmentation to nifti
-and extract masks corresponding to segmented labels.
+and extract masks corresponding to segmented labels. More info on FreeSurfer
+segmentation of hippocampal subfields and amygdala:
+https://surfer.nmr.mgh.harvard.edu/fswiki/HippocampalSubfieldsAndNucleiOfAmygdala
 
 The script assumes segmentHA has been used to segment the image.
 
