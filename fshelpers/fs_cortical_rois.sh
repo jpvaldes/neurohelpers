@@ -64,7 +64,7 @@ if [[ ${SUBJ} = "" || ${SUBJECTS_DIR} = "" || ${OUTPUT_DIR} = "" ]]; then
 fi
 
 SINK_DIR=${SUBJECTS_DIR}/${SUBJ}/${OUTPUT_DIR}
-mkdir -p ${SINK_DIR}
+mkdir -p ${SINK_DIR} ${SINK_DIR}/filled
 
 echo +++ Generate labels
 
@@ -93,7 +93,9 @@ for hemi in rh lh; do
             --temp ${SUBJECTS_DIR}/${SUBJ}/mri/rawavg.mgz --subject ${SUBJ} \
             --hemi ${hemi} --proj frac 0 1 .1 \
             --fillthresh .5 --reg ${SINK_DIR}/${SUBJ}_register.dat \
-            --o ${SINK_DIR}/${SUBJ}_${cleanlabel}.nii.gz
+            --o ${SINK_DIR}/${cleanlabel}.nii.gz
+        fslmaths ${SINK_DIR}/${cleanlabel}.nii.gz -fillh \
+            ${SINK_DIR}/filled/${cleanlabel}_fillh.nii.gz
     done
 done
 
