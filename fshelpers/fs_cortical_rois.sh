@@ -64,14 +64,14 @@ if [[ ${SUBJ} = "" || ${SUBJECTS_DIR} = "" || ${OUTPUT_DIR} = "" ]]; then
 fi
 
 SINK_DIR=${SUBJECTS_DIR}/${SUBJ}/${OUTPUT_DIR}
-mkdir -p ${SINK_DIR} ${SINK_DIR}/filled
+mkdir -p ${SINK_DIR} ${SINK_DIR}/labels ${SINK_DIR}/fillh_masks
 
 echo +++ Generate labels
 
 # generate labels with mri_annotation2label
 for hemi in lh rh; do
     mri_annotation2label --subject ${SUBJ} --hemi ${hemi}\
-        --outdir ${SINK_DIR} --annotation aparc.a2009s
+        --outdir ${SINK_DIR}/labels --annotation aparc.a2009s
 done
 
 echo +++ Transform to native space
@@ -84,7 +84,7 @@ echo +++ Extract ROI volumes
 
 # extract ROI volumes from labels with  mri_label2vol 
 for hemi in rh lh; do
-    for label in $(ls ${SINK_DIR}/${hemi}.*.label); do
+    for label in $(ls ${SINK_DIR}/labels/${hemi}.*.label); do
         # like using basename
         labelname=${label##*/}
         # like using dirname
@@ -95,7 +95,7 @@ for hemi in rh lh; do
             --fillthresh .5 --reg ${SINK_DIR}/${SUBJ}_register.dat \
             --o ${SINK_DIR}/${cleanlabel}.nii.gz
         fslmaths ${SINK_DIR}/${cleanlabel}.nii.gz -fillh \
-            ${SINK_DIR}/filled/${cleanlabel}_fillh.nii.gz
+            ${SINK_DIR}/fillh_masks/${cleanlabel}_fillh.nii.gz
     done
 done
 
